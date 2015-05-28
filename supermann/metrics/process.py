@@ -4,6 +4,8 @@ from __future__ import absolute_import, unicode_literals, division
 
 import functools
 
+from psutil import AccessDenied
+
 import supermann.utils
 
 
@@ -91,13 +93,24 @@ def io(sender, process, data):
     - ``process:{name}:io:read:bytes``
     - ``process:{name}:io:write:bytes``
     """
-    io_counters = process.io_counters()
-    sender.riemann.event(
-        service='process:{name}:io:read:bytes'.format(**data),
-        metric_f=io_counters.read_bytes)
-    sender.riemann.event(
-        service='process:{name}:io:write:bytes'.format(**data),
-        metric_f=io_counters.write_bytes)
+    try:
+        io_counters = process.io_counters()
+        sender.riemann.event(
+            service='process:{name}:io:read:bytes'.format(**data),
+            metric_f=io_counters.read_bytes)
+        sender.riemann.event(
+            service='process:{name}:io:write:bytes'.format(**data),
+            metric_f=io_counters.write_bytes)
+    except AccessDenied:
+        # psutil raised access denied.
+        sender.disconnect_event(supermann.metrics.process.io)
+        description = "Access denied reading /proc/"
+        sender.riemann.event(
+            service='process:{name}:io:read:bytes'.format(**data),
+            state='Warning', description=description)
+        sender.riemann.event(
+            service='process:{name}:io:write:bytes'.format(**data),
+            state='Warning', description=description)
 
 
 def state(sender, process, data):

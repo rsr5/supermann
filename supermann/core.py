@@ -59,9 +59,21 @@ class Supermann(object):
         """
         return signal.connect(reciver, sender=self)
 
+    def disconnect(self, signal, receiver):
+        """Disconnects a receiver from a signal
+
+        :param blinker.Signal signal: Listen for events from this signal
+        :param reciver: A function that will recive events
+        """
+        return signal.disconnect(receiver, sender=self)
+
     def connect_event(self, reciver):
         """Conects a reciver to ``event`` using :py:meth:`.connect`"""
         return self.connect(supermann.signals.event, reciver)
+
+    def disconnect_event(self, receiver):
+        """Disconnects a receiver from ``event`` using :py:meth:`.disconnect`"""
+        return self.disconnect(supermann.signals.event, receiver)
 
     def connect_process(self, reciver):
         """Conects a reciver to ``process`` using :py:meth:`.connect`"""
